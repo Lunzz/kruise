@@ -284,6 +284,7 @@ func mergeSidecarContainers(origins []corev1.Container, injected []*appsv1alpha1
 	return origins
 }
 
+// 重要
 func buildSidecars(isUpdated bool, pod *corev1.Pod, oldPod *corev1.Pod, matchedSidecarSets []sidecarcontrol.SidecarControl) (
 	sidecarContainers, sidecarInitContainers []*appsv1alpha1.SidecarContainer, sidecarSecrets []corev1.LocalObjectReference,
 	volumesInSidecars []corev1.Volume, injectedAnnotations map[string]string, err error) {

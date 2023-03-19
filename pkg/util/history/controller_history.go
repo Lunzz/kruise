@@ -28,7 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
-	"k8s.io/kubernetes/pkg/controller/history"
+	"k8s.io/kubernetes/pkg/controller/hisotry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 

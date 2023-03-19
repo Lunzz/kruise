@@ -55,6 +55,10 @@ var (
 * business logic.  Delete these comments after modifying this file.*
  */
 
+// 为manager提供Reconciler调谐
+// manager启动时调用Add，即调用add；add函数中加入Reconciler调谐逻辑，并声明watch对象（SidecarSet和Pod，add函数内
+// Reconciler调谐逻辑中会进一步调用 processor 进行 update 逻辑
+
 // Add creates a new SidecarSet Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {

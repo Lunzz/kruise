@@ -67,6 +67,7 @@ func init() {
 	controllerAddFuncs = append(controllerAddFuncs, nodepodprobe.Add)
 }
 
+// 调用所有的 xx.Add函数，即加入Reconciler调谐逻辑，并声明watch对象
 func SetupWithManager(m manager.Manager) error {
 	for _, f := range controllerAddFuncs {
 		if err := f(m); err != nil {

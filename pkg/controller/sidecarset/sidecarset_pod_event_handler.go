@@ -44,6 +44,7 @@ func (p *enqueueRequestForPod) Update(evt event.UpdateEvent, q workqueue.RateLim
 
 // When a pod is added, figure out what sidecarSets it will be a member of and
 // enqueue them. obj must have *v1.Pod type.
+// addPod创建事件，得到匹配的sidecarSets，workqueue入队一个调谐请求
 func (p *enqueueRequestForPod) addPod(q workqueue.RateLimitingInterface, obj runtime.Object) {
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {

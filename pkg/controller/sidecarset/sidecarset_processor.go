@@ -63,6 +63,7 @@ func NewSidecarSetProcessor(cli client.Client, expectations expectations.UpdateE
 	}
 }
 
+// 调用getMatchingPods
 func (p *Processor) UpdateSidecarSet(sidecarSet *appsv1alpha1.SidecarSet) (reconcile.Result, error) {
 	control := sidecarcontrol.New(sidecarSet)
 	// check whether sidecarSet is active
@@ -153,6 +154,7 @@ func (p *Processor) UpdateSidecarSet(sidecarSet *appsv1alpha1.SidecarSet) (recon
 	return reconcile.Result{}, nil
 }
 
+// 被主函数调用
 func (p *Processor) updatePods(control sidecarcontrol.SidecarControl, pods []*corev1.Pod) error {
 	sidecarset := control.GetSidecarset()
 	// compute next updated pods based on the sidecarset upgrade strategy
@@ -166,6 +168,7 @@ func (p *Processor) updatePods(control sidecarcontrol.SidecarControl, pods []*co
 	// upgrade pod sidecar
 	for _, pod := range upgradePods {
 		podNames = append(podNames, pod.Name)
+		// 核心
 		if err := p.updatePodSidecarAndHash(control, pod); err != nil {
 			klog.Errorf("updatePodSidecarAndHash error, s:%s, pod:%s, err:%v", sidecarset.Name, pod.Name, err)
 			return err
@@ -177,6 +180,7 @@ func (p *Processor) updatePods(control sidecarcontrol.SidecarControl, pods []*co
 	return nil
 }
 
+// 被updatePods调用 重要
 func (p *Processor) updatePodSidecarAndHash(control sidecarcontrol.SidecarControl, pod *corev1.Pod) error {
 	podClone := &corev1.Pod{}
 	sidecarSet := control.GetSidecarset()
@@ -204,6 +208,7 @@ func (p *Processor) updatePodSidecarAndHash(control sidecarcontrol.SidecarContro
 	return err
 }
 
+// 被updatePodSidecarAndHash调用
 func (p *Processor) listMatchedSidecarSets(pod *corev1.Pod) string {
 	sidecarSetList := &appsv1alpha1.SidecarSetList{}
 	if err := p.Client.List(context.TODO(), sidecarSetList); err != nil {
@@ -222,6 +227,7 @@ func (p *Processor) listMatchedSidecarSets(pod *corev1.Pod) string {
 	return strings.Join(sidecarSetNames, ",")
 }
 
+// 被主函数调用
 func (p *Processor) updateSidecarSetStatus(sidecarSet *appsv1alpha1.SidecarSet, status *appsv1alpha1.SidecarSetStatus) error {
 	if !inconsistentStatus(sidecarSet, status) {
 		return nil
@@ -253,6 +259,7 @@ func (p *Processor) updateSidecarSetStatus(sidecarSet *appsv1alpha1.SidecarSet, 
 	return nil
 }
 
+// 被主函数调用
 // If you need update the pod object, you must DeepCopy it
 func (p *Processor) getMatchingPods(s *appsv1alpha1.SidecarSet) ([]*corev1.Pod, error) {
 	// get more faster selector
@@ -288,6 +295,7 @@ func (p *Processor) getMatchingPods(s *appsv1alpha1.SidecarSet) ([]*corev1.Pod, 
 	return filteredPods, nil
 }
 
+// 被getMatchingPods调用(上一个)
 // get selected pods(DisableDeepCopy:true, indicates must be deep copy before update pod objection)
 func (p *Processor) getSelectedPods(namespaces sets.String, selector labels.Selector) (relatedPods []*corev1.Pod, err error) {
 	// DisableDeepCopy:true, indicates must be deep copy before update pod objection
@@ -306,6 +314,7 @@ func (p *Processor) getSelectedPods(namespaces sets.String, selector labels.Sele
 	return
 }
 
+// 被主函数调用
 func (p *Processor) registerLatestRevision(set *appsv1alpha1.SidecarSet, pods []*corev1.Pod) (
 	latestRevision *apps.ControllerRevision, collisionCount int32, err error,
 ) {
@@ -376,6 +385,7 @@ func (p *Processor) registerLatestRevision(set *appsv1alpha1.SidecarSet, pods []
 	return latestRevision, collisionCount, nil
 }
 
+// 被 注册最新版本 registerLatestRevision调用(上一个)
 func (p *Processor) updateCustomVersionLabel(revision *apps.ControllerRevision, customVersion string) error {
 	if customVersion != "" && customVersion != revision.Labels[appsv1alpha1.SidecarSetCustomVersionLabel] {
 		revisionClone := revision.DeepCopy()
@@ -389,6 +399,7 @@ func (p *Processor) updateCustomVersionLabel(revision *apps.ControllerRevision, 
 	return nil
 }
 
+// 被 注册最新版本 registerLatestRevision调用(上两个)
 func (p *Processor) truncateHistory(revisions []*apps.ControllerRevision, s *appsv1alpha1.SidecarSet, pods []*corev1.Pod) error {
 	// We do not delete the latest revision because we are using it.
 	// Thus, we must ensure the limitation is bounded, minimum value is 1.
@@ -424,6 +435,7 @@ func (p *Processor) truncateHistory(revisions []*apps.ControllerRevision, s *app
 	return nil
 }
 
+// 被filterActiveRevisions调用(上一个)
 func filterActiveRevisions(s *appsv1alpha1.SidecarSet, pods []*corev1.Pod, revisions []*apps.ControllerRevision) sets.String {
 	activeRevisions := sets.NewString()
 	for _, pod := range pods {
@@ -455,6 +467,7 @@ func filterActiveRevisions(s *appsv1alpha1.SidecarSet, pods []*corev1.Pod, revis
 	return activeRevisions
 }
 
+// 被 注册最新版本 registerLatestRevision 调用(上两个)
 // replaceRevision will remove old from revisions, and add new to the end of revisions.
 // This function keeps the order of revisions.
 func replaceRevision(revisions []*apps.ControllerRevision, oldOne, newOne *apps.ControllerRevision) {
@@ -475,6 +488,7 @@ func replaceRevision(revisions []*apps.ControllerRevision, oldOne, newOne *apps.
 	revisions[revisionCount-1] = newOne
 }
 
+// 被主函数调用
 // calculate SidecarSet status
 // MatchedPods: all matched pods number
 // UpdatedPods: updated pods number
@@ -509,6 +523,7 @@ func calculateStatus(control sidecarcontrol.SidecarControl, pods []*corev1.Pod, 
 	}
 }
 
+// 被主函数调用
 func isSidecarSetNotUpdate(s *appsv1alpha1.SidecarSet) bool {
 	if s.Spec.UpdateStrategy.Type == appsv1alpha1.NotUpdateSidecarSetStrategyType {
 		klog.V(3).Infof("sidecarSet spreading RollingUpdate config type, name: %s, type: %s", s.Name, s.Spec.UpdateStrategy.Type)
@@ -517,6 +532,8 @@ func isSidecarSetNotUpdate(s *appsv1alpha1.SidecarSet) bool {
 	return true
 }
 
+// 被 updatePodSidecarContainer 调用(下一个)
+// 直接在Pod.Spec.Containers中增加sidecar容器的配置
 func updateContainerInPod(container corev1.Container, pod *corev1.Pod) {
 	for i := range pod.Spec.Containers {
 		if pod.Spec.Containers[i].Name == container.Name {
@@ -526,6 +543,7 @@ func updateContainerInPod(container corev1.Container, pod *corev1.Pod) {
 	}
 }
 
+// 被 更新Pods中sidecar和hash updatePodSidecarAndHash 调用
 func updatePodSidecarContainer(control sidecarcontrol.SidecarControl, pod *corev1.Pod) {
 	sidecarSet := control.GetSidecarset()
 
@@ -585,6 +603,7 @@ func updatePodSidecarContainer(control sidecarcontrol.SidecarControl, pod *corev
 	control.UpdatePodAnnotationsInUpgrade(changedContainers, pod)
 }
 
+// 被更新Pods状态
 func inconsistentStatus(sidecarSet *appsv1alpha1.SidecarSet, status *appsv1alpha1.SidecarSetStatus) bool {
 	return status.ObservedGeneration > sidecarSet.Status.ObservedGeneration ||
 		status.MatchedPods != sidecarSet.Status.MatchedPods ||
@@ -595,6 +614,8 @@ func inconsistentStatus(sidecarSet *appsv1alpha1.SidecarSet, status *appsv1alpha
 		status.CollisionCount != sidecarSet.Status.CollisionCount
 }
 
+// 被主函数调用
+// 判断更新容器数量 不小于 匹配数量
 func isSidecarSetUpdateFinish(status *appsv1alpha1.SidecarSetStatus) bool {
 	return status.UpdatedPods >= status.MatchedPods
 }

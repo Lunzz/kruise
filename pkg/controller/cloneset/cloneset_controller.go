@@ -407,6 +407,7 @@ func (r *ReconcileCloneSet) syncCloneSet(
 	return err
 }
 
+// 主函数调用
 func (r *ReconcileCloneSet) getActiveRevisions(cs *appsv1alpha1.CloneSet, revisions []*apps.ControllerRevision) (
 	*apps.ControllerRevision, *apps.ControllerRevision, int32, error,
 ) {
@@ -464,6 +465,7 @@ func (r *ReconcileCloneSet) getActiveRevisions(cs *appsv1alpha1.CloneSet, revisi
 	return currentRevision, updateRevision, collisionCount, nil
 }
 
+// 主函数调用
 func (r *ReconcileCloneSet) getOwnedPods(cs *appsv1alpha1.CloneSet) ([]*v1.Pod, []*v1.Pod, error) {
 	opts := &client.ListOptions{
 		Namespace:     cs.Namespace,
@@ -472,6 +474,7 @@ func (r *ReconcileCloneSet) getOwnedPods(cs *appsv1alpha1.CloneSet) ([]*v1.Pod, 
 	return clonesetutils.GetActiveAndInactivePods(r.Client, opts)
 }
 
+// 主函数调用
 func (r *ReconcileCloneSet) getOwnedPVCs(cs *appsv1alpha1.CloneSet) ([]*v1.PersistentVolumeClaim, error) {
 	opts := &client.ListOptions{
 		Namespace:     cs.Namespace,
@@ -493,6 +496,7 @@ func (r *ReconcileCloneSet) getOwnedPVCs(cs *appsv1alpha1.CloneSet) ([]*v1.Persi
 	return filteredPVCs, nil
 }
 
+// 主函数调用
 // truncatePodsToDelete truncates any non-live pod names in spec.scaleStrategy.podsToDelete.
 func (r *ReconcileCloneSet) truncatePodsToDelete(cs *appsv1alpha1.CloneSet, pods []*v1.Pod) error {
 	if len(cs.Spec.ScaleStrategy.PodsToDelete) == 0 {
@@ -520,6 +524,7 @@ func (r *ReconcileCloneSet) truncatePodsToDelete(cs *appsv1alpha1.CloneSet, pods
 	return r.Update(context.TODO(), newCS)
 }
 
+// 主函数调用
 // truncateHistory truncates any non-live ControllerRevisions in revisions from cs's history. The UpdateRevision and
 // CurrentRevision in cs's Status are considered to be live. Any revisions associated with the Pods in pods are also
 // considered to be live. Non-live revisions are deleted, starting with the revision with the lowest Revision, until
@@ -567,6 +572,7 @@ func (r *ReconcileCloneSet) truncateHistory(
 	return nil
 }
 
+// 主函数调用
 func (r *ReconcileCloneSet) claimPods(instance *appsv1alpha1.CloneSet, pods []*v1.Pod) ([]*v1.Pod, error) {
 	mgr, err := refmanager.New(r, instance.Spec.Selector, instance, r.scheme)
 	if err != nil {
@@ -591,6 +597,8 @@ func (r *ReconcileCloneSet) claimPods(instance *appsv1alpha1.CloneSet, pods []*v
 	return claimedPods, nil
 }
 
+
+// 主函数调用  ----- 二函数
 // cleanUp unUsed pvcs, and return used pvcs.
 // If pvc owner pod does not exist, the pvc can be deleted directly,
 // else update pvc's ownerReference to pod.
@@ -653,6 +661,7 @@ func (r *ReconcileCloneSet) cleanupPVCs(
 	return activePVCs, nil
 }
 
+// 上个 二函数调用
 func (r *ReconcileCloneSet) updateOnePVC(cs *appsv1alpha1.CloneSet, pvc *v1.PersistentVolumeClaim) error {
 	if err := r.Client.Update(context.TODO(), pvc); err != nil {
 		r.recorder.Eventf(cs, v1.EventTypeWarning, "FailedUpdate", "failed to update PVC %s: %v", pvc.Name, err)
@@ -661,6 +670,7 @@ func (r *ReconcileCloneSet) updateOnePVC(cs *appsv1alpha1.CloneSet, pvc *v1.Pers
 	return nil
 }
 
+// 上上 二主函数调用
 func (r *ReconcileCloneSet) deleteOnePVC(cs *appsv1alpha1.CloneSet, pvc *v1.PersistentVolumeClaim) error {
 	clonesetutils.ScaleExpectations.ExpectScale(clonesetutils.GetControllerKey(cs), expectations.Delete, pvc.Name)
 	if err := r.Delete(context.TODO(), pvc); err != nil {
@@ -671,6 +681,7 @@ func (r *ReconcileCloneSet) deleteOnePVC(cs *appsv1alpha1.CloneSet, pvc *v1.Pers
 	return nil
 }
 
+// 上上上  二主函数调用
 func updateClaimOwnerRefToPod(pvc *v1.PersistentVolumeClaim, cs *appsv1alpha1.CloneSet, pod *v1.Pod) bool {
 	util.RemoveOwnerRef(pvc, cs)
 	return util.SetOwnerRef(pvc, pod, schema.GroupVersionKind{Version: "v1", Kind: "Pod"})
